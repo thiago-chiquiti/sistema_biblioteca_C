@@ -1,13 +1,18 @@
+//Pré processamento
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #define TAMANHO_ACERVO 20
+
+// Definição do comando para limpar a tela conforme o sistema operacional
 #ifdef _WIN32
     #define LIMPAR_TELA "cls" // Para Windows
 #else
     #define LIMPAR_TELA "clear" // Para Mac/Linux
 #endif
 
+// Definição da struct livro
 struct livro {
     int codigo;
     char titulo[50];
@@ -27,8 +32,9 @@ void limpar_buffer() {
 
 // Função para pausar a tela antes de limpar e mostrar o menu novamente
 void pausar_tela() {
+    int c;
     printf("\nPressione ENTER para continuar...");
-    while (getchar() != '\n'); // Só continua quando o usuário digitar enter
+    while ((c = getchar()) != '\n' && c != EOF); // Só continua quando o usuário digitar enter
 }
 
 void limparTela() {
@@ -38,10 +44,13 @@ void cadastrarLivro (struct livro acervo[], int tamanhoMaximo);
 void imprimirLivros (struct livro acervo[], int total_livros);
 void pesquisarLivro (struct livro acervo[], int total_livros);
 void ordenarLivros (struct livro acervo[], int total_livros);
+void carregarAcervo (struct livro acervo[]);
+void salvarAcervo (struct livro acervo[], int total_livros);
 
 int main() {
     struct livro acervo[TAMANHO_ACERVO];
     int op = 0;
+    carregarAcervo(acervo); // Carrega o acervo do arquivo ao iniciar
 
 
 while (op != 5) {
@@ -73,7 +82,8 @@ while (op != 5) {
             ordenarLivros(acervo, total_livros);
             break;
         case 5:
-            printf("Saindo do sistema...\n");
+            printf("Salvando dados e saindo do sistema...\n");
+            salvarAcervo(acervo, total_livros);
             break;
         default:
             printf("Opcao invalida! Tente novamente.\n");
@@ -83,7 +93,7 @@ while (op != 5) {
 
   } 
 
-
+return 0;
 }
 
 //Funções para modularizar o código
@@ -183,122 +193,28 @@ void cadastrarLivro (struct livro acervo[], int tamanhoMaximo) {
         pausar_tela();
     }
     
-    /*
-    op = 0;
-    while (op != 5) {
-        system("clear"); 
-        
-        printf("=== SISTEMA DE CONTROLE DA BIBLIOTECA ===\n");
-        printf("Livros cadastrados: %d/%d\n", total_livros, TAMANHO_ACERVO);
-        printf("1 - Cadastrar livros\n");
-        printf("2 - Imprimir livros\n");
-        printf("3 - Buscar por codigo\n");
-        printf("4 - Ordenar por ano\n");
-        printf("5 - Sair\n");
-        printf("Escolha: ");
-        scanf("%d", &op);
-        
-        if (op == 1) {
-            do {
-                if (total_livros >= TAMANHO_ACERVO) {
-                    printf("Memória cheia!\n");
-                    break;
-                }
-                
-                system("clear");
-                printf("Cadastro do livro %d:\n", total_livros + 1);
-                
-                printf("Digite o codigo: ");
-                scanf("%d", &acervo[total_livros].codigo);
-                limpar_buffer(); // Remove o \n do buffer
-
-                printf("Titulo: ");
-                // O [^\n] lê tudo até o enter. O espaço antes ignora espaços em branco residuais
-                scanf("%[^\n]", acervo[total_livros].titulo);
-                limpar_buffer();
-
-                printf("Autor: ");
-                scanf("%[^\n]", acervo[total_livros].autor);
-                limpar_buffer();
-
-                printf("Area: ");
-                scanf("%[^\n]", acervo[total_livros].area);
-                limpar_buffer();
-
-                printf("Ano: ");
-                scanf("%d", &acervo[total_livros].ano);
-                limpar_buffer();
-
-                printf("Editora: ");
-                scanf("%[^\n]", acervo[total_livros].editora);
-                limpar_buffer();
-
-                total_livros++; // Incrementa o contador real
-
-                printf("\nLivro cadastrado com sucesso!\n");
-            
-            } while (total_livros <= TAMANHO_ACERVO);
-                if (total_livros == TAMANHO_ACERVO) {
-                    printf("Acervo cheio! Nao e possivel cadastrar mais livros.\n");
-                    pausar_tela();
-                }
-                    else {
-                        printf("Deseja cadastrar outro livro? (1-Sim / 0-Nao): ");
-                        scanf("%d", &cadastrar_mais);
-                        limpar_buffer(); // Limpa o buffer do scanf
-                    }
-            } while (cadastrar_mais == 1);
-
-        } 
-        else if (op == 2) {
-            system("clear");
-            if (total_livros == 0) {
-                printf("Nenhum livro cadastrado!\n");
-            } else {
-                for (i = 0; i < total_livros; i++) { // Percorre só o que existe
-                    printf("\n--- Livro %d ---\n", i+1);
-                    printf("Codigo: %d\n", acervo[i].codigo);
-                    printf("Titulo: %s\n", acervo[i].titulo);
-                    printf("Ano: %d\n", acervo[i].ano);
-                    // Adicionei só o básico para não ficar gigante, pode por o resto
-                }
-            }
-            pausar_tela(); // Espera o usuário ler antes de limpar
-        } 
-        else if (op == 3) {
-            system("clear");
-            printf("Digite o codigo para buscar: ");
-            scanf("%d", &busca);
-            
-            int encontrou = 0;
-            for (i = 0; i < total_livros; i++) {
-                if (acervo[i].codigo == busca) {
-                    printf("\nENCONTRADO:\n");
-                    printf("Titulo: %s\n", acervo[i].titulo);
-                    printf("Autor: %s\n", acervo[i].autor);
-                    encontrou = 1;
-                    break; // Para de buscar se achou
-                }
-            }
-            if (!encontrou) printf("Livro nao encontrado!\n");
-            limpar_buffer(); // Limpa o buffer do scanf do codigo
-            pausar_tela();
-        } 
-        else if (op == 4) {
-            // Bubble Sort
-            // Note que usamos 'total_livros' e não 'TAMANHO_ACERVO'
-            for (i = 0; i < total_livros - 1; i++) {
-                for (j = i + 1; j < total_livros; j++) {
-                    if (acervo[i].ano > acervo[j].ano) {
-                        troca = acervo[i];
-                        acervo[i] = acervo[j];
-                        acervo[j] = troca;
-                    }
-                }
-            }
-            printf("\nLivros ordenados por ano com sucesso!\n");
-            pausar_tela();
+    void salvarAcervo (struct livro acervo[], int total_livros) {
+        FILE *arquivo = fopen("acervo.dat", "wb");
+        if (arquivo == NULL) {
+            printf("Erro ao abrir o arquivo para salvar!\n");
+            return;
         }
+        fwrite(&total_livros, sizeof(int), 1, arquivo);
+        if (total_livros > 0) {
+            fwrite(acervo, sizeof(struct livro), total_livros, arquivo);
+        }
+        fclose(arquivo);
     }
-    return 0;
-}*/
+
+    void carregarAcervo (struct livro acervo[]) {
+        FILE *arquivo = fopen("acervo.dat", "rb");
+        if (arquivo == NULL) {
+            printf("Nenhum arquivo de acervo encontrado. Iniciando com acervo vazio.\n");
+            return;
+        }
+        fread(&total_livros, sizeof(int), 1, arquivo);
+        if (total_livros > 0) {
+            fread(acervo, sizeof(struct livro), total_livros, arquivo);
+        }
+        fclose(arquivo);
+    }
